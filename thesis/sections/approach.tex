@@ -1,0 +1,1272 @@
+\chapter{Approach}
+\label{ch:approach}
+In the following section, we introduce our proposed security approach for substation automation systems.
+With the aim of securing the time-critical communication between resource-constrained devices in a time-variable environment, we propose a \textbf{C}ertificateless \textbf{A}ttribute-Based \textbf{S}erver-Aided \textbf{C}ryptosystem for \textbf{S}ubstation \textbf{A}utomation \textbf{S}ystems (CASC-SAS).
+The CASC-SAS cryptography and cybersecurity approach is able to prevent and mitigate cyberattacks by providing security schemes and mechanisms, and enforcing mandatory communication policies.
+The goal of the approach is the enhancement of SAS security by providing secure authentication, authorization, and attribute-based access control for time-critical SAS communication.
+
+The CASC-SAS approach comprises two core concepts.
+The first core concept of the approach is the \textbf{C}ertificateless \textbf{A}ttribute-Based \textbf{S}erver-Aided \textbf{A}uthentication (CASA).
+This concept represents the foundation of the CASC-SAS approach.
+The concept provides cryptographic algorithms and schemes for authentication, including a PKC signature scheme for key generation, signing, and verification.
+Communicating SAS devices as well as more abstract cybersecurity services can rely on the provided communication integrity, authenticity, and non-repudiation.
+The CASA concept is further discussed in \autoref{sec:approach:casa}.
+The second core concept of the approach is the \textbf{S}erver-Aided \textbf{A}ttribute-\textbf{B}ased \textbf{A}uthorization and \textbf{A}ccess \textbf{C}ontrol (SABAAC).
+This concept provides mechanisms to enable attribute-based authorization and ABAC for time-critical SAS communication.
+Accordingly, this concept represents cybersecurity means to provide access control, PoLP, and SoD.
+For this purpose, the concept relies on authentication services provided by CASA.
+The SABAAC concept is further discussed in \autoref{sec:approach:sabaac}.
+
+In the following sections, we introduce and discuss our proposed approach.
+At the beginning of this chapter, in \autoref{sec:approach:system_model}, we discuss the field of application of the proposed approach by introducing a system model.
+Based on the presented system model, we define the requirements of the proposed approach in \autoref{sec:approach:requirements}.
+In \autoref{sec:approach:attacks} we address potential adversarial attacks, for which the approach must provide mitigation strategies.
+To satisfy the aforementioned requirements and mitigate adversarial attacks, the CASC-SAS approach enforces security policies, which are discussed in \autoref{sec:approach:security_policies}.
+Subsequently, in \autoref{sec:approach:casc:architecture}, the dual-path four-layered security architecture of CASC-SAS is defined.
+The two main CASC-SAS concepts, its cryptography approach CASA and its authorization and access control approach SABAAC, are introduced in \autoref{sec:approach:casa} and \autoref{sec:approach:sabaac}.
+Finally, in \autoref{sec:approach:realization}, we present the realization of the CASC-SAS approach.
+% Subsequently, we present the proposed evaluation strategies and metrics of the approach in \autoref{sec:approach:evaluation}.
+% Finally, in \autoref{sec:approach:limitations} we discuss limitations of the proposed approach.
+
+\section{System Model}
+\label{sec:approach:system_model}
+In the following sections, we introduce the system model of the CASC-SAS approach.
+The system model serves the purpose of delimiting the scope and area of application of the proposed approach.
+
+The area of application of the proposed approach consists of ICSs in the power system domain.
+More specifically, the proposed approach is tailored to the communication and control systems of substations in the electricity grid.
+The communication and control equipment of an ICS is referred to as secondary equipment.
+The entirety of secondary equipment of a substation is referred to as SAS \cite{Padilla2015}.
+Although the proposed approach is tailored to the power system domain and substation environment, its main concepts may also be applied to other ICSs with similar requirements and constraints.
+
+\subsection{Architecture}
+The architecture of the presented system model is based on the IEC 61850 standards \cite{IEC61850P5}.
+The presented system model architecture consists of four layers called network, station, bay, and process level.
+The process, bay, and station level represent the internal layers of a SAS architecture.
+The SAS architecture containing the three internal layers as well as the station and process bus is shown in \autoref{fig:substation_architecture}.
+The shown busses are further discussed in \autoref{sec:approach:system_model:communication}.
+The network level represents a SAS-external layer to integrate multiple SAS instances and supervisory controllers into a comprehensive power system.
+Each of the four layers consists of different devices and provides different control and automation functions:
+\begin{enumerate}
+    \item Process Level: The process level provides functions to interact with the physical process via sensors and actuators.
+    As a consequence, SAS devices located at the process level provide interfaces to the physical process.
+    In other words, devices located at the process level transform analog measurements or control signals into digital values and vice versa.
+    Devices restricted to the transformation and provision of measurement and control values are referred to as Merging Units (MU).
+    Moreover, IEDs can be employed at the process level to combine MU functions with higher-level functions such as protection or communication tasks.
+
+    \item Bay Level: The bay level provides common functions of so-called bays of a SAS.
+    As stated by the \citeauthor{IEC61850P5} \cite{IEC61850P5}, a bay represents a closely connected subpart of a substation with common functionality.
+    The devices at bay level supervise the operation of lower-level devices of a SAS bay.
+    Consequently, a supervising bay level device is referred to as bay controller or bay protection.
+
+    \item Station Level: The station level provides functions related to the substation as a whole.
+    Therefore, the station level comprises devices required for on-site and remote monitoring and control of the substation.
+    Devices at the station level include Human Machine Interfaces (HMI) for substation operators as well as Wide Area Network (WAN) gateways like SCADA RTUs.
+
+    \item Network Level: The network level provides higher-level functions exceeding the scope of a single SAS.
+    The network level devices include supervisory monitoring and control devices like SCADA MTUs.
+\end{enumerate}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/substation_architecture.drawio.pdf}
+    % \caption{The internal SAS architecture consisting of three layers called system level, bay level, and process level which are connected via station bus and process bus.}
+    \caption{Internal three-layered architecture of a SAS.}
+    \label{fig:substation_architecture}
+\end{figure}
+
+\subsection{Communication}
+\label{sec:approach:system_model:communication}
+In the following, we discuss the communication between devices of the presented system model.
+For this purpose, we identify different communication characteristics based on which communication relationships and messages can be classified.
+Moreover, we define three messages types for time-critical ICS and SAS communication.
+Furthermore, we discuss the bus-based device interactions occurring in the above-mentioned four layer system model.
+
+\subsubsection{Classification Characteristics}
+The communication relationships between devices within a SAS can be classified using different communication characteristics.
+In the following sections, classifications based on topology, continuity, and latency are further discussed.
+
+\paragraph{Topology-Based Classification}
+Topological communication characteristics can be used to classify the device relationships based on their relative or absolute location within the system model.
+Accordingly, communication can either occur between devices on the same layer or different layers of the system model.
+Communication on the same layer of the system model is referred to as horizontal communication, whereas communication between devices on different layers is referred to as vertical communication.
+Moreover, communication can occur between devices of the same or different subsystems.
+Communication between devices of the same subsystem is classified as internal communication, whereas communication relationships including an external device are classified as external communication.
+Furthermore, a communication relationship is not limited to a single receiver using unicast, but rather a group of devices via multicast or all devices via broadcast may receive a sender's message.
+
+\paragraph{Continuity-Based Classification}
+Besides the topology-based classification, communication relationships can be classified based on their continuity.
+Continuous, session-oriented, or stateful communication requires an initial session establishment between the involved devices.
+While the first message exchange requires additional initialization overhead, subsequent latencies may benefit from the established communication session.
+Discontinuous, message-oriented, or stateless communication enables communication without initial overhead for the involved devices.
+Consequently, discontinuous communication does not lead to latency emerging from session initialization and management.
+
+\paragraph{Latency-Based Classification}
+Since communication in ICS and SAS is time-critical, communication relationships can be classified based on their communication latency constraints.
+Within the scope of the proposed approach, we define communication latency as sum of processing time and transmission time required to exchange information between involved devices.
+As a consequence, the communication latency represents the time an individual message requires to be delivered from the sending buffer of a host to the receiving buffer of another host.
+
+Transmission time is the time required to transmit a message over a network link with a specific throughput, whereas processing time represents the time required for a device to send, forward, or receive a message.
+For intermediate network devices like routers and switches the processing time depends on queuing delay and forwarding delay.
+For the sender and receiver of a message the processing time consists of enqueue and dequeue delays, cryptographic overhead, and message coding.
+
+To support Ethernet-based SAS protocols such as GOOSE and SV, communication latency constraints for each individual data frame of the data link layer must be taken into account.
+The composition of the end-to-end latency of Ethernet-based communication is visualized in \autoref{fig:frame_delivery_time_composition}.
+In \autoref{fig:frame_delivery_time_composition:unverified}, the communication latency is composed of time for encoding ($t_{E}$), time for transmission to another host or intermediate system ($t_{T}$), time for switching in an intermediate system ($t_{S}$), and time for decoding ($t_{D}$).
+In \autoref{fig:frame_delivery_time_composition:verified}, device-local data verification is employed, which leads to additional processing time required for signing ($t_{Sig}$) and verification ($t_{Ver}$).
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.85\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/frame_delivery_time_without_signature.drawio.pdf}
+        \caption{No data verification.}
+        \label{fig:frame_delivery_time_composition:unverified}
+        \vspace{1.0\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.85\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/frame_delivery_time_with_signature.drawio.pdf}
+        \caption{Device-local data verification.}
+        \label{fig:frame_delivery_time_composition:verified}
+    \end{subfigure}
+    \caption{Composition of the end-to-end latency using Ethernet-based communication.}
+    \label{fig:frame_delivery_time_composition}
+\end{figure}
+
+\subsubsection{Message Types}
+\label{sec:approach:system_model:communication:message_types}
+The defined message types of the presented system model are based on the classification characteristics defined above.
+Furthermore, the defined message types have been adapted from the message types and performance classes of the IEC 61850 standards \cite{IEC61850P5}.
+The defined message types as well as their typical communication topology, continuity, and latency constraints are shown in \autoref{tab:message_types}.
+
+The low latency message type corresponds to the IEC 61850 \cite{IEC61850P5} message types 1A and 4.
+These messages are used for SAS-internal exchange of sampled values and state values.
+In IEC-compliant substations, the sampled values are exchanged via multicast using the SV protocol between MUs and IEDs (vertical) or between MUs (horizontal).
+Moreover, state values and state changes are exchanged between IEDs (horizontal) using the GOOSE protocol.
+
+The medium latency message type corresponds to the IEC 61850 message types 1B and 2.
+These messages are used for SAS-internal and SAS-external, as well as horizontal and vertical session-based client-server communication.
+In IEC-compliant substations, IEDs use the MMS protocol to communicate with other IEDs and higher-level devices.
+
+The high latency message type corresponds to the IEC 61850 message types 3 and 5.
+This message type is used for HMI interactions as well as non-time-critical operations like file transfers.
+In IEC-compliant substations, MMS as well as SCADA protocols are used for high latency communication.
+\begin{table}
+    \centering
+    \small
+    % \caption{Message types of the presented system model classified with regard to their topology, continuity, and latency constraints of the communication relationships.}
+    \caption{Message types of the presented system model.}
+    \label{tab:message_types}
+    \begin{tabular}{l c c c c c}
+    \toprule
+    \multicolumn{1}{c}{Message Type} & \multicolumn{3}{c}{Topology} & Continuity & Latency\\
+    \cmidrule(lr){2-4}
+    & Externality & Verticality & Receiver & & Constraint\\
+    \midrule
+    Low Latency & Internal & Horiz./Vert. & Multicast & Message-Based & 3 ms\\
+    Medium Latency & Int./Ext. & Horiz./Vert. & Unicast & Session-Based & 20-100 ms\\
+    High Latency & Int./Ext. & Horiz./Vert. & Unicast & Session-Based & 500 ms\\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{Communication Buses}
+The presented system model uses a bus-based approach for message exchange within and between the system architecture layers.
+The realization of SAS-internal buses is typically based on Ethernet, and on open or proprietary fieldbus technology.
+The bus-based approach as well as the two specific buses introduced in the following are based on the IEC 61850 standards \cite{IEC61850P5}.
+
+The first bus for SAS-internal message exchange is referred to as process bus.
+The process bus is located between the bay level and the process level.
+The process bus is used for time-critical message-based publisher-subscriber communication, i.e., multicast or broadcast communication.
+GOOSE and SV are the protocols used for process bus communication.
+
+The second bus for SAS-internal message exchange is referred to as station bus.
+The station bus is located between the station level and the bay level.
+The station bus connects IEDs at the bay level with each other as well as with gateways and interfaces at the station level.
+The communication at the station bus is typically session-based unicast communication with less strict time requirements compared to the process bus.
+
+SAS-external message exchange between devices on the station level and network level use WAN telecommunication technologies including Internet, satellite, cellular, and radio technology.
+Secure tunneling approaches like Virtual Private Networks (VPN) can be used to enhance the security of SAS message exchange over an unsecure communication medium.
+
+\section{Requirements}
+\label{sec:approach:requirements}
+In the following, we introduce the requirements of the presented approach.
+Based on the identified requirements, functional and non-functional characteristics of the proposed approach are derived and evaluated.
+Each requirement is associated with a requirement category.
+We define five requirement categories for the introduced system requirements.
+The requirement categories consist of security (RQ.SEC), safety (RQ.SAF), availability (RQ.AVA), performance (RQ.PER), and compatibility (RQ.COM).
+
+\subsection{Security}
+\begin{description}
+    %\paragraph{RQ.SEC.1 Confidentiality}
+    %The system prohibits unauthorized access to sensitive information stored on devices and payload of messages exchanged within the system and between systems \cite{Eckert2023}.
+    \item[RQ.SEC.1] Data Frame Payload Integrity\\
+    A SAS device detects unauthorized manipulation of data frames that are exchanged between itself and another device.
+    \item[RQ.SEC.2] Data Frame Sender Authenticity\\
+    Each SAS device can prove the authenticity and trustworthiness of a sender of a data frame.
+    \item[RQ.SEC.3] Data Frame Authorship Non-Repudiation\\
+    A SAS device cannot dispute its authorship of a data frame sent.
+    \item[RQ.SEC.4] Access Control\\
+    The system prohibits unauthorized access to sensitive information stored on devices.
+    \item[RQ.SEC.5] Principle of Least Privilege  (PoLP)\\
+    The system ensures that each subject has the least number of privileges necessary to perform its function \cite{JTF2020}.
+    \item[RQ.SEC.6] Separation of Duties (SoD)\\
+    The system ensures that no subject has enough privileges to be able to misuse the system without collusion \cite{JTF2020}.
+    %\paragraph{RQ.SEC.7 Privacy Preservation}
+    %\todo{TODO: Does this conflict with the idea of proving the origin of a request? In other words, is it possible to check if the subject who requested the access decision is still the same subject who used it in its request?}
+\end{description}
+
+\subsection{Safety}
+\begin{description}
+    \item[RQ.SAF.1] Safe Operation\\
+    Under possible operating conditions, the system must not pose a threat to itself and its environment.
+    \item[RQ.SAF.2] Fail-Safe\\
+    In case of failure, the system terminates without causing harm to the system or system environment~\cite{rfc4949}.
+    In other words, the system never transitions into an unsafe state.
+\end{description}
+
+\subsection{Availability}
+\begin{description}
+    \item[RQ.AVA.1] Continuing Operation\\
+    Under possible operating conditions, the system must continue its operation as stated by the system requirements.
+    \item[RQ.AVA.2] Fail-Operational\\
+    In case of failure, the system aims to continue its operation by selectively terminating failing system functions.
+    The selective termination of non-essential system functions in case of a failure is also referred to as fail-soft~\cite{rfc4949}.
+\end{description}
+
+\subsection{Performance}
+\begin{description}
+    \item[RQ.PER.1] Constrained Data Frame Delivery Time\\
+    The latency constraints for network communication, as defined in \autoref{sec:approach:system_model:communication:message_types}, must be satisfied.
+    To support Ethernet-based SAS protocols, the approach must be able to satisfy time constraints for each individual data frame of the data link layer.
+    \item[RQ.PER.2] Constrained Computational Performance\\
+    The limited performance of resource-constrained devices of an SAS must be taken into account.
+    Consequently, computationally complex algorithms must be executed by performance-oriented TTPs.
+    \item[RQ.PER.3] Constrained Energy \& Power\\
+    The limited energy and power of resource-constrained devices of an SAS must be taken into account.
+    Consequently, energy-intensive tasks, such as long-running computations, or power-intensive tasks, such as tasks leading to high CPU loads, must be executed by performance-oriented TTPs.
+\end{description}
+
+\subsection{Compatibility}
+\begin{description}
+    \item[RQ.COM.1] Interoperability\\
+    The system components are capable of exchanging information and providing services, irrespective of whether they originate from a single vendor or multiple vendors~\cite{IEC61850P5}.
+    \item[RQ.COM.2] Interchangeability\\
+    The system's behavior and functionality may not be influenced by an exchange of devices with an equal range of functions from a single vendor or multiple vendors~\cite{IEC61850P5}.
+\end{description}
+
+\section{Adversarial Attacks}
+\label{sec:approach:attacks}
+In addition to the aforementioned requirements, this section introduces an adversary model and provides an enumeration and classification of cyberattacks.
+While not being exclusively relevant to SAS, the presented adversaries and attacks pose a threat to the state and operation of systems that correspond to the system model defined in \autoref{sec:approach:system_model}.
+A plethora of different threats, adversaries, and cyberattack classifications applicable to SCADA, SAS, ICS, or smart grid systems are discussed in the literature \cite{Nicholson2012,Aloul2012,Rizzetti2015,Youssef2016,Cai2016,Hussain2021}.
+In the following paragraphs, these concepts are aggregated and transferred to the area of application of the CASC-SAS approach.
+
+For the purpose of design, realization, and evaluation of the CASC-SAS approach, we assume an adversary corresponding to the Dolev-Yao model \cite{Dolev1983}.
+The Dolev-Yao adversary is adapted to the SAS-specific network characteristics, including the usage of two separated buses for the exchange of messages.
+Based on the adversary classification presented by \citeauthor{Hof2007} \cite{Hof2007} and \citeauthor{Ponikwar2016} \cite{Ponikwar2016}, the defined Dolev-Yao-like CASC-SAS adversary is a malicious, global, cooperative, dynamic, active, insider adversary.
+Accordingly, a possible CASC-SAS adversary is characterized by five assumptions:
+\begin{enumerate}
+    \item The adversary has physical or remote access to at least one of the internal SAS networks, i.e., the process bus or the station bus.
+    \item The adversary is able to initiate arbitrary message exchanges with any device on the networks.
+    \item The adversary is able to receive messages from any device on the networks.
+    \item The adversary is able to capture, alter, and drop messages exchanged on the networks.
+    \item The adversary is unable to bypass or break cryptographic procedures without first obtaining the necessary key material.
+\end{enumerate}
+
+The types of cyberattacks that a CASC-SAS adversary can carry out are visualized in \autoref{fig:attack_classification}.
+Each cyberattack is classified based on the security objective affected.
+The objective of availability-focused attacks, as illustrated in \autoref{fig:attacks_availability}, is to disrupt system services in a manner that renders the continuation of operations impossible.
+In contrast, integrity-focused attacks, as illustrated in \autoref{fig:attacks_integrity}, aim to disturb the system's integrity by transitioning the system into a state that is either invalid or beneficial for an adversary.
+The authenticity-focused attacks shown in \autoref{fig:attacks_authenticity} enable an adversary to impersonate a legitimate subject of the system, thereby abusing the subject's granted privileges.
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.38\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/attacks_availability.drawio.pdf}
+        \caption{Availability-focused attacks.}
+        \label{fig:attacks_availability}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.295\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/attacks_integrity.drawio.pdf}
+        \caption{Integrity-focused attacks.}
+        \label{fig:attacks_integrity}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.30\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/attacks_authenticity.drawio.pdf}
+        \caption{Authenticity-focused attacks.}
+        \label{fig:attacks_authenticity}
+    \end{subfigure}
+    \caption{Classification of adversarial attacks based on security objectives.}
+    \label{fig:attack_classification}
+\end{figure}
+
+In addition to the classification based on the affected security objective, we propose a classification of potential cyberattacks based on the adversary's objective.
+These objectives are modeled as attack trees, as the objective of an adversary is typically unachievable by a single operation but rather requires a sequence of attacks to be achieved.
+This modeling approach allows for a more comprehensive understanding of the adversary's strategy and the potential avenues for defense.
+With regard to the CASC-SAS approach, two primary objectives of an adversary were identified.
+The first objective is an attack against the SAS network communication, i.e., against the SAS protocols.
+The second objective is an attack against SAS devices.
+Accordingly, two independent attack trees are provided in \autoref{fig:attack_tree_communication} and \autoref{fig:attack_tree_device}.
+The colors utilized for the visualization of attacks within the attack trees correspond to the colors utilized in \autoref{fig:attack_classification} and, thus, represent the affected security objective.
+
+The first attack tree, as illustrated in \autoref{fig:attack_tree_communication}, represents an adversary with the objective of compromising the system by disrupting communication between two or more legitimate system subjects.
+In order to achieve this objective by compromising the communication integrity, the adversary may either replay messages that have been captured on the network, or modify them.
+While replaying only requires the adversary to be able to eavesdrop on communication, message modification additionally requires the adversary to masquerade as a legitimate subject.
+This can be achieved by either breaking authenticity and integrity protection mechanisms, such as digital signatures, or colluding with other adversaries, such as infiltrated system devices.
+Furthermore, an adversary may disrupt communication via (distributed) denial of service (DoS) attacks.
+Examples of DoS attacks in a SAS include the intentional delay of time-critical messages, also known as time-delay attacks \cite{Bianchin2018}, and dropping of messages.
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/attack_tree_communication.drawio.pdf}
+    \caption{Attack tree comprising cyberattacks that endanger SAS message exchange protocols.}
+    \label{fig:attack_tree_communication}
+\end{figure}
+
+The second attack tree, as illustrated in \autoref{fig:attack_tree_device}, represents an adversary with the objective of compromising the system by directly attacking the system devices.
+An adversary may seek to either disrupt the device's availability or compromise its integrity.
+An adversary may achieve disruption of the device's availability via the deployment of malware or (distributed) DoS attacks, such as flooding attacks.
+A device's integrity can be compromised by modifying its state using accessible service interfaces.
+Consequently, an adversary may either create a legitimate request, in case of an unsecured service, or forge a request.
+As discussed above with regard to message modification, request forgery might require an adversary to masquerade as a legitimate subject to circumvent authenticity and integrity protection mechanisms.
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/attack_tree_device.drawio.pdf}
+    \caption{Attack tree comprising cyberattacks that endanger the functionality of SAS devices.}
+    \label{fig:attack_tree_device}
+\end{figure}
+
+\section{Security Policies}
+\label{sec:approach:security_policies}
+The CASC-SAS approach enforces a set of security policies with the purpose of satisfying the aforementioned requirements and defending a SAS against cyberattacks.
+The objective of these policies is not merely to safeguard the equipment of the CASC-SAS approach, but rather to ensure the continuous operation of SAS devices, including IEDs and MUs.
+The security policies represent mandatory rules for the operation of a SAS secured by the CASC-SAS approach.
+While the attack trees discussed in \autoref{sec:approach:attacks} provide insight into potential adversarial strategies, the proposed security policies represent mitigation strategies for potential cyberattacks.
+The cyberattacks that can be mitigated by enforcing the security policies are shown in \autoref{tab:security_policies:attacks}.
+The classification of the cyberattacks is based on the classifications illustrated in \autoref{fig:attack_classification}, \autoref{fig:attack_tree_communication}, and \autoref{fig:attack_tree_device}.
+Moreover, the security requirements, as introduced in \autoref{sec:approach:requirements}, that can be satisfied by enforcing the security policies are shown in \autoref{tab:security_policies:requirements}.
+
+\begin{description}
+    \item[Policy I:] Data Frame Signing and Verification\\%SEC 1/2/3
+    The authenticity, integrity, and non-repudiation of exchanged messages on SAS networks are safeguarded by employing cryptographic mechanisms for signing and verification, i.e., digital signatures if PKC is used or MAC if SKC is used.
+    This security policy is enforced for each individual data frame of the data link layer to support Ethernet-based SAS protocols such as GOOSE and SV.
+    The integration of signing and verification into the OSI protocol stack of two generic Ethernet-based SAS applications within a switched LAN is visualized in \autoref{fig:ethernet_app_protocol_stack}.
+    In the shown protocol stack, signing and verification reside within the presentation layer directly below an Ethernet-based application, e.g., a GOOSE or SV application.
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\linewidth]{figures/signed_ethernet_app_protocol_stack.drawio.pdf}
+        \caption{Protocol stack of Ethernet-based SAS applications using data verification.}
+        \label{fig:ethernet_app_protocol_stack}
+    \end{figure}
+    %
+    \item[Policy II:] Data Frame Access Control\\%SEC 4
+    Unauthorized access to service interfaces provided by SAS devices is prevented by employing access control.
+    As discussed above, this security policy is enforced for each individual data frame of the data link layer to support Ethernet-based SAS protocols.
+    In other words, CASC-SAS checks if a data frame is authorized before delivering it to a SAS application.
+    %
+    \item[Policy III:] Flow-Based Time-Dependent Authorization\\%SEC 5/6
+    Authorization mechanisms are deployed to specify the privileges of communicating entities in a SAS and, thus, enable access control.
+    Since a SAS environment is non-static with regard to its state, authorizations have to be time-dependent as well.
+    Moreover, authorizations have to be fine-grained and flexible to satisfy the PoLP and SoD security requirements.
+    Nevertheless, authorizations have to be network-traffic-flow-based, i.e., applicable to any sequence of data frames with common properties passing through the SAS network, to reduce evaluation overhead and management overhead.
+    %
+    \item[Policy IV:] Data Frame Sequencing\\%SEC 1, AVA 1/2
+    Sequencing of exchanged messages is used to safeguard the system's integrity by mitigating intentional or accidental re-ordering, replaying, and delaying of messages.
+    For this purpose, a timestamp is appended to each individual data frame sent.
+    A receiver may utilize the timestamp for two distinct purposes.
+    Firstly, the receiver interprets the timestamp as sequence number to reject re-ordered and replayed data frames of a network traffic flow.
+    Secondly, the receiver may use the timestamp to calculate the average communication latency and its standard deviation to detect infrequent delaying of data frames.
+    For the latter case, no time synchronization between sender and receiver is required, as only the deviation from the average is relevant for the classification of delayed data frames.
+    %
+    \item[Policy V:] Flow-Based Ingress Buffer Management\\%SEC 1, AVA 1/2
+    Congestions of exchanged messages in network ingress buffers of SAS devices have to be avoided to mitigate intentional or accidental DoS due to message flooding.
+    CASC-SAS employs flow-based buffer management to avoid message congestions.
+    The flow-based buffer management limits the number of processed messages of a network traffic flow within a specific time interval.
+    If the processing limit is reached, a receiver may either reject received data frames belonging to the network traffic flow or replace buffered data frames with received ones.
+\end{description}
+\begin{table}
+    \centering
+    \small
+    \caption{Adversarial attacks mitigated by CASC-SAS security policies.}
+    \label{tab:security_policies:attacks}
+    \begin{tabular}{c c c | c c c c c}
+    \toprule
+    Adversarial Attack & \multicolumn{2}{c |}{Classification} & \multicolumn{5}{c}{Policy}\\
+    & Security Objective & Adversarial Objective & I & II & III & IV & V\\
+    \midrule
+    % Availability
+    Malware            & Availability & Device        &   & X & X &   &   \\
+    Flooding           & Availability & Device        &   &   &   &   & X \\
+    Time-Delay         & Availability & Communication &   &   &   & X &   \\
+    % Integrity
+    False Data Injection  & Integrity & Dev. / Comm.  & X & X & X &   &   \\
+    Message Forgery       & Integrity & Device        & X &   &   &   &   \\
+    Message Modification  & Integrity & Communication & X &   &   &   &   \\
+    Message Replay        & Integrity & Communication &   &   &   & X &   \\
+    % Authenticity
+    Spoofing / Masquerading & Authenticity & Dev. / Comm. & X &   &   &   &   \\
+    Adaptive Chosen-Message & Authenticity & Dev. / Comm. & X &   &   &   &   \\
+    Collusion               & Authenticity & Dev. / Comm. & X &   &   &   &   \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+\begin{table}
+    \centering
+    \small
+    \caption{Security requirements satisfied by CASC-SAS security policies.}
+    \label{tab:security_policies:requirements}
+    \begin{tabular}{r l | c c c c c}
+    \toprule
+    \multicolumn{2}{c |}{Requirement} & \multicolumn{5}{c}{Policy}\\
+    & & I & II & III & IV & V\\
+    \midrule
+    RQ.SEC.1: & Payload Integrity & X & & & X\textsuperscript{1} & X\textsuperscript{2} \\
+    RQ.SEC.2: & Sender Authenticity & X & & & & \\
+    RQ.SEC.3: & Authorship Non-Repudiation & X & & & & \\
+    RQ.SEC.4: & Access Control & & X & & & \\
+    RQ.SEC.5: & Principle of Least Privilege & & & X & & \\
+    RQ.SEC.6: & Separation of Duties & & & X & & \\
+    \bottomrule
+    \end{tabular}\\
+    \footnotesize
+    \textsuperscript{1} Prevents re-ordering, replaying, and delaying of valid messages.\\
+    \textsuperscript{2} Prevents loss of valid messages due to message flooding.
+\end{table}
+
+\section{Security Architecture}
+\label{sec:approach:casc:architecture}
+In the following, we present the security architecture of the proposed approach.
+The CASC-SAS approach is based on a dual-path four-layered architecture.
+The four layers of the architecture are presented in \autoref{sec:approach:casc:architecture:layers}.
+Moreover, the two paths of the architecture are further discussed in \autoref{sec:approach:casc:architecture:paths}.
+
+\subsection{Four-Layered Architecture}
+\label{sec:approach:casc:architecture:layers}
+The CASC-SAS architecture is non-strictly layered and consists of four open layers.
+The goal of the layered architecture is the separation of different domains and levels of abstraction within the CASC-SAS approach.
+An upper layer may use services provided by a lower layer but not vice versa.
+Moreover, since the layering is non-strict, an upper layer is not restricted to the services provided by its direct predecessor, but may bypass lower layers.
+The four layers of the CASC-SAS architecture and their provided services are defined in the following sections.
+
+\subsubsection{Layer 3: Domain}
+The domain layer is the uppermost layer of the architecture.
+The domain layer represents the domain-specific applications and the exchange of domain-specific messages.
+We assume that the domain layer does not provide means for secure message exchange between entities.
+As a consequence, the domain layer relies on the secure message exchange provided by lower layers.
+%Provides insecure domain-specific messages to be exchanged between two different SAS devices\dots
+
+\subsubsection{Layer 2: Cybersecurity}
+The cybersecurity layer encompasses algorithms and protocols used to satisfy the security requirements.
+Additionally, security workflows and mechanisms for the enforcement of security policies are located at this layer.
+Consequently, the cybersecurity layer provides secure message exchange services to the domain layer.
+The SABAAC concept of CASC-SAS is part of this architectural layer.
+SABAAC provides authorization and access control to satisfy the security requirements access control, PoLP, and SoD.
+%Provides authorization and access control to satisfy access control, PoLP, and SoD.
+
+\subsubsection{Layer 1: Cryptography}
+The cryptography layer provides cryptographic algorithms and schemes to higher layers of the architecture.
+The exchange of cryptographic control messages enables cryptographic workflows such as key generation, key distribution, key revocation, and server-aided cryptography.
+The CASA core concept of CASC-SAS is located at the cryptography layer.
+CASA provides authentication means via digital signatures to higher levels of the architecture.
+Accordingly, CASA provides services that satisfy the security requirements integrity, authenticity, and non-repudiation.
+
+\subsubsection{Layer 0: Message Exchange}
+The lowermost layer of the CASC-SAS architecture is referred to as message exchange layer.
+The message exchange layer provides reliable and unreliable message exchange between devices in a network to higher layers.
+The message exchange layer represents an abstraction of the physical layer, data link layer, network layer, and transport layer of a conventional OSI network stack.
+%Provides reliable and unreliable message exchange between devices in a network.
+
+\subsubsection{Example: Domain-Specific Communication}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/layers_request_example.drawio.pdf}
+    % \caption{An exemplary domain-specific communication between a sending and receiving entity including the involved CASC-SAS layers and messages exchanged between the architectural layers.}
+    \caption{Exemplary message exchange in four-layered CASC-SAS architecture.}
+    \label{fig:layers_request_example}
+\end{figure}
+An exemplary domain-specific communication between a sending entity and receiving entity is shown in \autoref{fig:layers_request_example}.
+The figure shows the four layers of the CASC-SAS architecture at the sender and receiver.
+Moreover, the different messages exchanged between the layers are shown.
+While the invocation of services is restricted to predecessor layers, message exchange resulting from an invocation may occur bidirectionally.
+The presented domain-specific communication is initiated by entity A.
+Therefor, an application at the domain layer of entity A creates a domain-specific message and delivers it to the cybersecurity layer.
+The yet unsigned and non-authorized message is then authorized by SABAAC and forwarded to CASA at the cryptography layer for signing.
+Subsequently, the signed and authorized message is forwarded to the receiver using the either reliable or unreliable network transport services provided by the message exchange layer.
+Upon arrival at the receiver, the message exchange layer delivers the signed and authorized message to the cybersecurity layer.
+The messages are then verified by the cybersecurity layer before forwarding them to the domain layer and application.
+For the purpose of message verification, the cybersecurity layer enforces the CASC-SAS security policies.
+The access control policy is enforced by verifying the message authorization.
+Moreover, the message is forwarded to the cryptography layer for digital signature verification.
+
+\subsection{Dual-Path Architecture}
+\label{sec:approach:casc:architecture:paths}
+%Data Path (Online, time-critical communication, Domain-Specific Messages) \& Control Path (Offline, Non-Time Critical communication, CASC-SAS Messages)\dots
+In addition to the separation into different layers, the occurring message exchanges within the CASC-SAS architecture are logically divided into two communication paths.
+The two paths are referred to as data path and control path.
+
+The messages on the data path are directly related to the forwarding of domain-specific payload from a sending entity to a receiving entity.
+Besides the domain-specific messages, control messages required for the message forwarding are transported on the data path.
+This message-related communication includes server-aided signing and verification requests as well as access control.
+As a consequence, the data path is used for traffic-intensive and time-critical message exchange.
+
+The messages on the control path are used for the exchange of management information and do not carry payload that is directly related to domain-specific messages.
+The components of the CASC-SAS approach use control path messages for layer-internal communication between different devices.
+The cryptography layer uses control messages for key generation, distribution, and revocation.
+The cybersecurity layer uses control messages for tasks such as policy management.
+As a result, the communication occurring on the control path is less traffic-intensive and less time-critical.
+
+\section{Certificateless Attribute-Based Server-Aided Authentication}
+\label{sec:approach:casa}
+In the following section, we present the \textbf{C}ertificateless \textbf{A}ttribute-Based \textbf{S}erver-Aided \textbf{A}uthentication (CASA) concept.
+CASA is a CL-PKC approach.
+Consequently, neither certificates nor key escrow are required~\cite{AlRiyami2003}.
+The goal of CASA is to provide cryptographic protocols, algorithms, and schemes for key generation, distribution, and revocation as well as signing and verification.
+Moreover, the goal of CASA is to enable and support more abstract cybersecurity mechanisms like authorization and access control of the CASC-SAS approach.
+Therefore, CASA represents the foundation of the employed CASC-SAS cybersecurity mechanisms.
+
+%Since CASA is a CL-PKC approach, neither certificates nor key escrow is required~\cite{AlRiyami2003}.
+%Moreover, the CASA approach proposes a key generation that is not only based on subject identities but rather enables public keys and private keys based on arbitrary attributes of subjects or even groups of subjects.
+%The key generation of the CASA approach is inspired by the alternative CL-PKC key generation technique proposed by \citeauthor{AlRiyami2003} \cite{AlRiyami2003}.
+%The defining characteristics of the alternative key generation is the derivation of partial private keys from public keys and identities.
+%As a consequence, an entity has to generate its public key before it can request a partial private key from the CAPP.
+%This alternative key generation enables sending of partial private keys over unsecure channels and reduces the required trust in the CAPP.
+%Furthermore, this technique allows only one public key to be created for a specific private key.
+
+\subsection{Administration \& Processing Platform}
+The CASA Administration and Processing Platform (CAPP) represents the central component of the CASA approach.
+The main objective of the CAPP is the provisioning of services required for the realization of cryptographic protocols.
+While CASA also provides its own signature scheme $\mathcal{S}_{CASA}$, which is further discussed in \autoref{sec:casa:scheme}, the CAPP and its protocols are algorithm-agnostic.
+The use of an algorithm-agnostic central component in the CASA approach is based on the idea, that different cryptographic algorithms and schemes might be optimal solutions for different problems.
+This idea is inspired by the cipher suites and cipher transitioning of the TLS protocol \cite{rfc8446}.
+The support of different algorithms and schemes enables devices to choose the cryptographic approach, that fits their security requirements and performance constraints best.
+
+\subsubsection{Server-Aided Cryptography}
+As PKC mechanisms may consist of computationally complex algorithms and operations, a core task of the CAPP is to enable and support server-aided PKC.
+By supporting server-aided PKC, CASA encourages the utilization of server-aided CL-PKC schemes for time-critical applications.
+To make CASA server-aided, the CAPP supports devices by handling computationally expensive algorithms instead of executing them locally on resource-constrained devices.
+To minimize the required trust, the CAPP may only handle certain computations, e.g., partially sign or verify a request of a device.
+This server-aided approach enables resource-constrained devices to apply secure PKC algorithms and schemes in a time-critical OT environment.
+
+In the following, we employ the concept of server-aided PKC for the verification process.
+As stated by \citeauthor{Wu2008} \cite{Wu2008}, a server-aided verification process has to satisfy the property of being computation-saving.
+A server-aided verification process $V_{Aided}$ is computation-saving if the computational costs for the verifier are strictly less than the costs of non-server-aided verification $V_{Conventional}$.
+In other words, $V_{Aided}$ is computation-saving if the equation $Cost(V_{Aided}) < Cost(V_{Conventional})$ holds.
+
+\subsubsection{Online \& Offline Cryptography}
+Since CASA is tailored for time-critical communication, the approach aims to reduce the required time for cryptographic algorithms.
+In addition to server-aided cryptography, this time reduction is achieved by precomputation.
+For this purpose, each step of an algorithm is classified as either online or offline.
+Online steps depend on the sender's public key, the digital signature, or the message.
+Consequently, online steps cannot be precomputed.
+Nevertheless, specific online steps can be accelerated via server-aided cryptography.
+Offline steps depend on information that is available before any message exchange occurs.
+Therefore, offline steps can be precomputed either at the CAPP or at client-side to reduce the required time for cryptographic operations.
+
+\subsection{Algorithm-Agnostic Public-Key Exchange Protocol}
+The Algorithm-agnostic PKC EXchange (APEX) protocol represents the primary protocol of CASA.
+The main objective of the protocol is the exchange of information between the CAPP and other devices within a SAS.
+An APEX message exchange is always initiated by sending a request to the CAPP.
+Consequently, the protocol can be classified as a request-response client-server protocol.
+Furthermore, the protocol is based on a stateless communication pattern that establishes no sessions at the CAPP.
+In other words, a message exchange is completed as soon as the APEX reply is sent to the requestor.
+
+The APEX protocol comprises five so-called transactions.
+A transaction represents a request-response pair of the protocol.
+The transactions of the protocol are defined as follows:
+\begin{description}
+    \item[Transaction I:] Registration\\
+    A device within a SAS sends a registration request to establish its identity and its initial public key at the CAPP.
+    For this purpose, the device encapsulates its public key and its identifying attributes in the registration request.
+    \item[Transaction II:] Re-Registration\\
+    The process of linking a new public key to existing attributes, or modifying an already registered public key is referred to as re-registration. 
+    By issuing a re-registration, devices may register multiple public keys, e.g., for different cryptographic algorithms.
+    A re-registration request has to be verifiable with one of the registered public keys of a device.
+    If the re-registration request cannot be verified, it is rejected by the CAPP.
+    \item[Transaction III:] Revocation\\
+    The revocation transaction allows devices to revoke a registered public key by removing it from the CAPP.
+    The revocation is referred to as deregistration, if it is used to revoke the last registered public key of a device.
+    \item[Transaction IV:] Query\\
+    The query transaction allows devices to retrieve a specific public key from the CAPP.
+    To identify the requested public key, the sender of the request has to encapsulate the identifying attributes of the key owner.
+    \item[Transaction V:] Computation\\
+    A device may issue a computation request in order to make use of server-aided operations provided by the CAPP.
+    Besides the operation-dependent parameters, the request must contain an identification of the requested operation.
+\end{description}
+
+\subsection{Signature Scheme $\mathcal{S}_{CASA}$}
+\label{sec:casa:scheme}
+The CASA signature scheme $\mathcal{S}_{CASA} = (I, G_{PPK}, G_{SK}, S_i, S_{AGG}, V_{SAV}, V_{ENT})$ is a seven-tuple of algorithms.
+The algorithms comprise an initialization algorithm $I$, a partial private key generation algorithm $G_{PPK}$, a private key generation algorithm $G_{SK}$, a signing algorithm $S_i$, a signature aggregation algorithm $S_{AGG}$, a partial server verification algorithm $V_{SAV}$, and an entity verification algorithm $V_{ENT}$.
+In the following sections, the specific algorithms are further discussed.
+
+%The definition of the CASA signature scheme is based on the definition of digital signature schemes provided by \citeauthor{Boneh2023} \cite{Boneh2023}.
+%Moreover, since CASA is a CL-PKC approach, the signature scheme has been adapted from the schemes and concepts presented by \citeauthor{AlRiyami2003} \cite{AlRiyami2003} and \citeauthor{Ramadan2023} \cite{Ramadan2023}.
+%The proposed server-aided verification concept and algorithms are inspired by schemes proposed by \citeauthor{Ramadan2020} \cite{Ramadan2020}, \citeauthor{Girault2005} \cite{Girault2005} and \citeauthor{Wu2008} \cite{Wu2008}.
+
+%\subsubsection{Security Model}
+%The proposed signature scheme $\mathcal{S}_{CASA}$ is a secure signature scheme if it is existentially unforgeable under an adaptive chosen-message attack (EUF-CMA)~\cite{Boneh2023, Goldwasser1988}.
+%To create an existential forgery, i.e., output a valid pair of message and signature for a new message, an adversary carrying out a CMA can request valid signatures from an entity for any message of his choice.
+%While non-adaptive CMA restricts the adversary to a fixed set of messages chosen prior to the attack, adaptive CMA allows the adversary to request signatures of messages depending on previously obtained signatures.
+% \citeauthor{Goldwasser1988} describe an adaptive CMA as most powerful attack possible for an enemy restricted to using the signature scheme.
+
+\subsubsection{Initialization Algorithm $I$}
+The initialization algorithm $(\rho, s) \leftarrow I(\lambda)$ takes the security parameter $\lambda$ as input and outputs the public system parameters $\rho$ and the master secret $s$.
+The initialization algorithm is executed by the CAPP.
+After the execution, $\rho$ is publicly available to all entities, whereas $s$ is only known to the CAPP.
+The initialization algorithm consists of the following steps:
+\begin{enumerate}
+    \item Define the bilinear groups $G_1$, $G_2$, and $G_T$ of prime order $q$, generators $g_1 \in G_1$ and $g_2 \in G_2$, and a bilinear pairing $e$:
+    \[
+        e: G_1 \times G_2 \rightarrow G_T
+    \]
+    A map $e$ is a bilinear pairing if it fulfills the following properties:
+    \begin{enumerate}
+        \item Bilinearity: $e(P^a, Q^b) = e(P, Q)^{ab}$ for all $P \in G_1, Q \in G_2$ and $a, b \in \mathbb{Z}_q^*$.
+        \item Non-Degeneracy: $e(P, Q) \neq 1$ for $P \in G_1, Q \in G_2$
+        \item Computability: There is an efficient algorithm to compute $e(P, Q)$ for any $P \in G_1, Q \in G_2$
+    \end{enumerate}
+    \item Define the cryptographic hash functions $H_1$, $H_2$, and $H_3$:
+    \[
+        H_1: \{0,1\}^* \to G_1,
+        \quad H_2: \{0,1\}^* \to \mathbb{Z}_q^*,
+        \quad H_3: \mathbb{Z}_q^* \to G_2.
+    \]
+    \item Generate the master secret $s$ and compute the master public key $pk_m$:
+    \[
+        s \in \mathbb{Z}_q^*,
+        \quad pk_m = g_2^{s}.
+    \]
+    \item Publish the public system parameters $\rho$:
+    \[
+        \rho = (G_1, G_2, G_T, q, e, g_1, g_2, pk_m, H_{1}, H_{2}, H_{3}).
+    \]
+\end{enumerate}
+
+\subsubsection{Partial Private Key Generation Algorithm $G_{PPK}$}
+The partial private key generation algorithm $ppk_i \leftarrow G_{PPK}(\rho, s, ID_i, ATT_i)$ takes the public system parameters $\rho$, the master secret of the CAPP $s$, the identifier $ID_i$ of entity $A_i$, and the attributes $ATT_i$ of entity $A_i$ as input.
+The algorithm outputs the partial private key $ppk_i$ of entity $A_i$.
+The partial private key generation is executed by the CAPP on request of entity $A_i$.
+After the execution, the CAPP provides the partial private key to the corresponding entity.
+The partial private key generation algorithm consists of the following steps:
+\begin{enumerate}
+    \item Compute the partial private key $ppk_i$ on request of entity $A_i$:
+    \[
+        ppk_i = H_1(ID_i || ATT_i)^{s}.
+    \]
+    \item Provide the partial private key $ppk_i$ to entity $A_i$.
+\end{enumerate}
+
+\subsubsection{Private Key Generation Algorithm $G_{SK}$}
+The private key generation algorithm $sk_i \leftarrow G_{SK}(\rho, ppk_i)$ takes the public system parameters $\rho$, and the partial private key $ppk_i$ of entity $A_i$ as input.
+The algorithm outputs the private signing key $sk_i$ of entity $A_i$.
+The private key generation algorithm consists of the following steps:
+\begin{enumerate}
+    \item Generate a random secret value $\chi_i$:
+    \[
+        \chi_i \in \mathbb{Z}_q^*.
+    \]
+    \item Set the private signing key $sk_i$:
+    \[
+        sk_i = (ppk_i, \chi_i).
+    \]
+\end{enumerate}
+
+\subsubsection{Signing Algorithm $S_i$}
+The signing algorithm $\sigma_{i} \leftarrow S_i(\rho, sk_i, m, T)$ takes the public system parameters $\rho$, the private signing key $sk_i$ of entity $A_i$, a message $m$, and an access policy $T$ as input, and outputs the signature $\sigma_{i}$.
+In other words, the signing algorithm $S_i$ is used by the sender $A_i$ of a message $m$ to generate a digital signature $\sigma_{i}$.
+The generated digital signature $\sigma_{i}$ is associated with the message $m$, the sender's private signing key $sk_i$, and an access policy $T$.
+The signing algorithm consists of the following steps:
+\begin{enumerate}
+    \item Check if the attributes $ATT_i$ of entity $A_i$ satisfy the policy $T$, and abort the process otherwise.
+    \item Compute the hash $h$ of the message $m$:
+    \[
+        h = H_2(m || T).
+    \]
+    \item Compute the signature $\sigma_i$ using the private signing key $sk_i$:
+    \[
+        \sigma_i = ppk_i \cdot H_3(h)^{\chi_i}.
+    \]
+\end{enumerate}
+
+\subsubsection{Signature Aggregation Algorithm $S_{AGG}$}
+The signature aggregation algorithm $\sigma_{agg} \leftarrow S_{AGG}(\sigma_{1 \dots n})$ takes $n$ signatures $\{\sigma_i | 1 \leq i \leq n\}$ as input.
+The algorithm outputs an aggregated signature $\sigma_{agg}$:
+\[
+    \sigma_{agg} = \prod_{i=1}^n \sigma_i.
+\]
+
+\subsubsection{Partial Server Verification Algorithm $V_{SAV}$}
+The partial server verification algorithm $P_{CAPP} \leftarrow V_{SAV}(\rho, s, \sigma_{agg}, ID_{1 \dots n}, ATT_{1 \dots n})$ takes the public system parameters $\rho$, the master secret of the CAPP $s$, an aggregated signature $\sigma_{agg}$, the entity identifiers $\{ID_i | 1 \leq i \leq n\}$, and the entity attributes $\{ATT_i | 1 \leq i \leq n\}$ as input.
+The algorithm outputs the partial verification $P_{CAPP}$.
+The partial server verification algorithm consists of the following steps:
+\begin{enumerate}
+    \item Compute the aggregated public key $pk_{agg}$:
+    \[
+        pk_{agg} = \prod_{i=1}^n H_1(ID_i || ATT_i)^{s}.
+    \]
+    \item Compute the partial verification $P_{CAPP}$:
+    \[
+        P_{CAPP} = e(pk_{agg} \cdot \frac{\sigma_{agg}}{pk_{agg}}, g_2).
+    \]
+\end{enumerate}
+
+\subsubsection{Entity Verification Algorithm $V_{ENT}$}
+The entity verification algorithm $\delta \in \{accept, reject\} \leftarrow V_{ENT}(\rho, \sigma_{agg}, P_{CAPP})$ represents the final step of the verification process.
+The algorithm takes the public system parameters $\rho$, the aggregated signature $\sigma_{agg}$, and the partial verification $P_{CAPP}$ as input.
+The algorithm outputs the verification decision $\delta$ which is either $accept$ or $reject$.
+In other words, the verification algorithm $V_{ENT}$ is used by a message receiver to verify a message $m$ sent by entity $A_i$ based on an appended signature $\sigma_{agg}$.
+As $\sigma_{agg}$ is associated with the message $m$ and the sender's private signing key $sk_i$, it allows the receiver to verify the integrity and authenticity of the received message $m$.
+The entity verification algorithm consists of the following steps:
+\begin{enumerate}
+    \item Compute the bilinear pairing $P_{Entity}$:
+    \[
+        P_{Entity} = e(\sigma_{agg}, g_2).
+    \]
+    \item Accept $m$ if the following equation holds and reject otherwise:
+    \[
+        P_{Entity} \overset{!}{=} P_{CAPP}
+    \]
+\end{enumerate}
+
+\section{Server-Aided Attribute-Based Authorization \& Access Control}
+\label{sec:approach:sabaac}
+The second core concept of the CASC-SAS approach is the \textbf{S}erver-Aided \textbf{A}ttribute-\textbf{B}ased \textbf{A}uthorization and \textbf{A}ccess \textbf{C}ontrol (SABAAC).
+The SABAAC approach enables the employment of attribute-based authorization and access control for time-critical SAS communication.
+Therefore, the approach prevents unauthorized access and extraction of information.
+The approach enables CASC-SAS to satisfy the access control, PoLP, and SoD security requirements.
+Moreover, the expressive and flexible yet computationally expensive ABAC policies are handled in a server-aided manner to satisfy the strict time constraints of the SAS domain.
+
+Our authorization and access control approach represents a security concept that is located on the cybersecurity layer of the CASC-SAS architecture.
+Thus, it relies on secure authentication services provided by CASA.
+As a consequence, the approach assumes that efficient and secure signing and verification algorithms are available.
+In other words, CASA provides secure cryptographic algorithms and schemes that enable SABAAC to realize secure authorization and access control.
+
+The proposed authorization and access control approach is based on a function-oriented component-based architecture.
+The architecture and components are further discussed in \autoref{sec:approach:sabaac:architecture}.
+Furthermore, the approach is divided into two central tasks.
+The first task is referred to as delegated attribute-based authorization.
+The delegated attribute-based authorization is responsible for the access control policy creation, management, storage, and distribution.
+This task partially takes place prior to access requests and corresponding access decisions.
+The delegated attribute-based authorization protocol is further discussed in \autoref{sec:approach:sabaac:authorization}.
+The second central task is referred to as delegated ABAC.
+The delegated ABAC is responsible for the policy decision exchange and policy enforcement.
+This task takes place when an entity initiates the communication with another entity.
+The delegated ABAC protocol is further discussed in \autoref{sec:approach:sabaac:accesscontrol}.
+An overview of the SABAAC architecture, components, and protocols is shown in \autoref{fig:sabaac_protocols_overview}.
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/SABAAC_protocols_overview.drawio.pdf}
+    % \caption{Component-based architecture and communication protocols of the SABAAC approach, including the four SABAAC components, their interrelationships, and the integration of CASA components and services into the authorization and access control workflow.}
+    \caption{Function-oriented component-based architecture of the SABAAC approach.}
+    \label{fig:sabaac_protocols_overview}
+\end{figure}
+
+\subsection{Authorization \& Access Control Architecture}
+\label{sec:approach:sabaac:architecture}
+The component-based architecture of our authorization and access control approach consists of four functional units.
+These functional units have been adapted from the access control mechanism functional points presented by \citeauthor{Hu2014} \cite{Hu2014}.
+Each functional unit is represented by a component that offers a set of services.
+The components of the architecture are TTPs since the semantic validity of their provided services is not verifiable by the service consumers.
+%We specify the components as semi-trusted for the access control problem due to the restriction to access control tasks and available mitigation approaches such as multiple instances of a single component.
+Strategies to reduce the required trust in specific components, including the deployment of multiple instances of a single component, are discussed in the following sections.
+The four components of the architecture are defined below:
+\begin{description}
+    \item[Policy Administration Point (PAP)] The PAP offers services for the policy creation, management, and distribution.
+    The PAP is a component of the delegated attribute-based authorization process and executes the corresponding authorization protocols.
+    Moreover, it provides interfaces for policy management services to human operators.
+    The PAP accesses the PSP to persist policies and policy changes.
+    \item[Policy Storage Point (PSP)] The PSP acts as a repository to make created policies and changes to policies persistent.
+    For this purpose, the PSP offers Create, Read, Update, and Delete (CRUD) services to PAP instances.
+    The physical PSP instance may be integrated with the PAP component to avoid network communication overhead.
+    \item[Policy Decision Point (PDP)] The PDP takes access control decisions by evaluating policies.
+    The PDP takes decision on request of a PEP and provides the access control decision to the requesting PEP.
+    As a consequence, the PDP is part of the delegated ABAC task of SABAAC.
+    Furthermore, in the SABAAC architecture the PDP incorporates the services provided by the context handler, which was introduced by \citeauthor{Hu2014} \cite{Hu2014}.
+    Therefore, the PDP not only takes access control decisions on request but is responsible for the policy and attribute evaluation workflow.
+    This workflow includes the retrieval of required attributes and speedup techniques such as access decision caching and policy evaluation precomputation.
+    \item[Policy Enforcement Point (PEP)] The PEP enforces access control decisions by controlling access to protected objects.
+    As a consequence, the PEP is part of the delegated ABAC task of SABAAC.
+    The services provided by the PEP rely on access control decisions taken by the PDP.
+    % To reduce the required trust in the PDP decision, the PEP can query multiple PDPs to validate the access control decision taken.
+    Moreover, in the SABAAC architecture the PEP incorporates the services provided by the Policy Information Point (PIP), which was introduced by \citeauthor{Hu2014} \cite{Hu2014}.
+    Accordingly, the SABAAC PEP provides attributes related to its protected objects to the PDP.
+\end{description}
+
+\subsection{Access Control Policy}
+\label{sec:approach:sabaac:policy}
+According to \citeauthor{Hu2014} \cite{Hu2014}, ABAC is an access control model that enables access decisions based on attributes associated with subjects, objects, actions, and the environment of a system.
+An ABAC policy represents a set of rules that describe under which environmental conditions a certain subject is granted to perform certain actions on a specific protected object.
+The SABAAC approach relies on the concept of attribute-based policies and access control due to the following benefit:
+ABAC enables multifactor policy expression, while RBAC and IBAC limit the policy expressiveness by only relying on either roles or identities.
+Consequently, the multifactor policy expression enables fine-grained and flexible access control.
+
+\subsubsection{Policy Specification}
+The SABAAC approach features a novel strategy for the representation and specification of access control policies.
+In this section we introduce the structure of the policies and define the different types of attributes that are supported.
+% Moreover, we introduce the SABAAC Policy Specification Language (SPSL) that is used by human operators to specify access control policies.
+As defined by the second and third security policy of CASC-SAS in \autoref{sec:approach:security_policies}, the policies are enforced for data frame flows, i.e., sets of data frames with common properties passing through the SAS network.
+Accordingly, the objective of an access control policy is twofold.
+On the one hand, a policy has to contain information that specifies if the policy is applicable to a certain data frame flow.
+On the other hand, a policy must specify which actions should be taken for a matching data frame flow.
+
+\paragraph{Access Control Policy:} $\rho = (action_{\rho}, flow_{\rho}, auxiliary_{\rho})$.\\
+A SABAAC policy $\rho$ is represented by a three-tuple, which contains the $action$ to be taken, the $flow$-specifying pattern, and a set of $auxiliary$ attributes specifying additional non-flow-related system characteristics.
+
+\paragraph{Action:} $action \in \{GRANT, DENY\}$.\\
+The action of a policy specifies whether a matching data frame flow should be granted or denied.
+A data frame from a granted flow may be delivered to a SAS device, whereas a data frame from a denied flow is dropped by a PEP.
+The default action of SABAAC is $DENY$ which leads to dropping of all data frames of non-explicitly granted flows.
+
+\paragraph{Flow Pattern:} $flow = \{p_1, \dots, p_n\}$, $p_i(frame) \in \{TRUE, FALSE\}$.\\
+The flow pattern of a policy specifies whether the policy is applicable to a specific data frame or not.
+For this purpose, the flow pattern consists of a set of frame predicates $p_1, \dots, p_n$.
+A frame predicate $p_i$ is a function that assigns a boolean value to an arbitrary data frame.
+A predicate $p_i$ matches a frame $f$, if $p_i(f) = TRUE$.
+A policy is applicable to a specific data frame if all frame predicates match the frame.
+In other words, a policy $\rho = (action_{\rho}, flow_{\rho}, auxiliary_{\rho})$ is applicable to a frame $f$ if the following equation holds:
+\[
+    \forall p_i \in flow_{\rho}: p_i(f) = TRUE
+\]
+
+\paragraph{Auxiliary Attributes:} $auxiliary = \{a_1, \dots, a_n\}$, $a_i(system) \in \{TRUE, FALSE\}$.\\
+The auxiliary attributes of a policy specify non-flow-related system attributes that have to be taken into account in order to apply an access control policy.
+The auxiliary attributes are specified in the form of so-called system predicates $a_1, \dots, a_n$.
+A system predicate $a_i$ is a function that assigns a boolean value to the current system state.
+A policy $\rho = (action_{\rho}, flow_{\rho}, auxiliary_{\rho})$ is applicable in a system $s$ if all system predicates match the current system state, i.e., a policy is applicable if the following equation holds:
+\[
+    \forall a_i \in auxiliary_{\rho}: a_i(s) = TRUE
+\]
+
+\subsubsection{Policy Classification}
+The utilization of ABAC can avoid explicit authorizations prior to a request \cite{Hu2014}.
+In other words, an ABAC policy can be dynamically evaluated at the time of a request.
+This dynamic evaluation allows the use of attributes from a time-variable environment.
+As stated by \citeauthor{Burmester2013} \cite{Burmester2013}, a real-time attribute represents an attribute whose value is time-dependent.
+Given an attribute evaluation function $E_{ATT}$ and a point of time $t$, the value $\lambda_a$ of a real-time attribute $a$ is defined by $E_{ATT}(a, t) = \lambda_a$.
+
+Each SABAAC policy $\rho$ is related to a set of attributes $ATT_{\rho} = ATT_{flow_{\rho}} \cup ATT_{auxiliary_{\rho}}$.
+The flow attributes $ATT_{flow_{\rho}}$ consist of all frame-related attributes required for the evaluation of the frame predicates $p_1, \dots, p_n$.
+The auxiliary attributes $ATT_{auxiliary_{\rho}}$ consist of all non-flow-related system attributes required for the evaluation of the system predicates $a_1, \dots, a_n$.
+To handle policies based on their degree of time-variability, the SABAAC approach classifies policies as follows:
+\begin{description}
+    \item[Dynamic Policy] A dynamic policy $\rho$ is an ABAC policy whose evaluation relies on at least one time-variable subject, object, environment, or action attribute.
+    A policy $\rho$ is dynamic iff $\exists a \in ATT_{\rho}: \exists t_i \neq t_j: E_{ATT}(a,t_i) \neq E_{ATT}(a,t_j)$.
+    Due to the time-variable evaluation of dynamic policies, access decisions must have a limited time of validity that corresponds to the change rate of the underlying attribute values.
+    As a result, caching of access decisions that are based on dynamic policies should be avoided.
+    A dynamic policy is also referred to as real-time policy.
+    \item[Static Policy] A static policy $\rho$ is an ABAC policy whose evaluation does not rely on time-variable subject, object, environment, or action attributes.
+    A policy $\rho$ is static iff $\forall a \in ATT_{\rho}: \forall t_i,t_j: E_{ATT}(a,t_i) = E_{ATT}(a,t_j)$.
+    Since static policies do not rely on time-variable attributes, access decisions can be cached.
+    Moreover, due to the non-frequent attribute retrieval and evaluation as well as access decision caching, static policies are a viable solution for low latency message exchange.
+    A static policy is also referred to as non-real-time policy.
+\end{description}
+
+\subsubsection{Policy Evaluation}
+The policy evaluation is the process of deriving an access control decision from an access control policy and enforcing the decision in the SAS.
+While the access control policy may depend upon the current system state, the corresponding access control decision is static during a specified period of validity.
+As a consequence, the process of evaluating a SABAAC policy can be divided into two related processes:
+The PDP-driven dynamic authorization derives an access control decision from an access control policy for the current system state.
+The PEP-driven decision enforcement utilizes the result of the dynamic authorization to enforce the SAS policies in a timely manner.
+
+\paragraph{Access Control Decision:} $decision_{\rho} = \{flow_\rho, action_\rho, nexthop, validity\}$.\\
+An access control decision or access decision consists of a $flow$-specifying pattern, an $action$ to be taken, a $nexthop$ set specifying the PEPs a matching data frame should be forwarded to, and a period of $validity$.
+Accordingly, an access decision is valid for a specific data frame flow in a specific system during a specified period of time.
+
+\paragraph{Dynamic Authorization:} $E_{POL}: Policy \times System \rightarrow Decision$.\\
+In the SABAAC approach, the policy evaluation is server-aided and takes partially place at the PDP.
+To derive an access decision from an access control policy at the PDP, the dynamic authorization function is used.
+The dynamic authorization function of SABAAC is defined as follows:
+\[
+    E_{POL}(\rho, s_t) =
+    \begin{cases}
+        (flow_\rho, action_\rho, nexthop, validity) & \text{, if } \forall a_i \in auxiliary_{\rho}: a_i(s) = TRUE,\\
+        (flow_\rho, DENY, \emptyset, validity) & \text{, otherwise.}
+    \end{cases}
+\]
+Thus, if the system predicates $a_1, \dots, a_n$ of the policy match the current system state $s_t$, the policy is applicable to data frame flows in the system $s$.
+To evaluate the system predicates, the PDP fetches the auxiliary attributes $ATT_{auxiliary_{\rho}} \subseteq s_t$ prior to the evaluation of $a_1, \dots, a_n$.
+The validity of the resulting access decision at the point of time $t$ equals the minimal validity of the attribute values in $\{\lambda_k = E_{ATT}(k, t) | k \in ATT_{auxiliary_{\rho}} \subseteq s_t\}$.
+Consequently, the validity of an access decision of a dynamic policy is determined by the attribute value that expires first.
+The validity of an access decision of a static policy may be limited by specifying a non-attribute-related maximum time of validity, to avoid the utilization of invalid or outdated access decisions.
+
+\paragraph{Decision Enforcement:} $E_{DEC}: Decision \times Frame \rightarrow (Action, Nexthop)$.\\
+A PEP uses an access control decision $d_{\rho}$ taken by a PDP to enforce a policy $\rho$ in the SAS.
+For this purpose, each data frame $f$ traversing a PEP is matched using $flow_\rho$ to identify the corresponding access decision.
+The process of enforcing a policy based on a priorly taken access decision is referred to as decision enforcement.
+At the PEPs the decision enforcement for a decision $d_{\rho} = \{flow_\rho, action_\rho, nexthop, validity\}$ and a frame $f$ is performed using the decision enforcement function $E_{DEC}$:
+\[
+    E_{DEC}(d_{\rho}, f) =
+    \begin{cases}
+        (action_\rho, nexthop) & \text{, if } \forall p_i \in flow_{\rho}: p_i(f) = TRUE\\
+        & \quad \land validity.contains(time.now),\\
+        (DENY, \emptyset) & \text{, otherwise.}
+    \end{cases}
+\]
+Thus, if the flow predicates match a data frame, and the decision is still valid, the decision enforcement function returns the action to be taken and the PEPs the frame has to be forwarded to.
+Two cases have to be distinguished, if $E_{DEC}(d_{\rho}, f) = (action_\rho, nexthop)$:
+\begin{itemize}
+    \item \textbf{Outgoing Data Frame:} An outgoing data frame $f$ is forwarded to each $PEP \in nexthop$, if $action_\rho = GRANT$.
+    \item \textbf{Incoming Data Frame:} An incoming data frame $f$ is accepted by a receiving $PEP$, if $action_\rho = GRANT$ and $PEP \in nexthop$.
+\end{itemize}
+If multiple decisions match a data frame $f$ identified by flow attributes $ATT_{f}$, a PEP may choose the decision corresponding to the most specifically matching flow predicates.
+When two flow patterns $flow_\gamma$ and $flow_\delta$ of the access control policies $\gamma$ and $\delta$ match a data frame $f \supseteq ATT_{f}$, $flow_\gamma$ is said to match $f$ more specifically than $flow_\delta$ if $ATT_{f} \supseteq ATT_{flow_{\gamma}} \supsetneq ATT_{flow_{\delta}}$.
+In case of $(ATT_{flow_{\gamma}} \not \supseteq ATT_{flow_{\delta}}) \land (ATT_{flow_{\gamma}} \not \subseteq ATT_{flow_{\delta}})$, the matching flow patterns and their corresponding access control policies and decisions are said to be conflicting.
+A PEP may use a so-called composite decision $d_C$ to resolve two or more conflicting access control decisions $d_1, \dots, d_n$:
+\[
+    d_C =
+    \begin{cases}
+        (\bigcup_{i=1}^{n}flow_i, GRANT, \bigcup_{i=1}^{n}nexthop_i, \min_{i=1}^{n}validity_i) & \text{, if } \forall d_i \in \{d_1, \dots, d_n\}:\\
+        & \quad action_i = GRANT,\\
+        (\bigcup_{i=1}^{n}flow_i, DENY, \emptyset, \min_{i=1}^{n}validity_i) & \text{, otherwise.}
+    \end{cases}
+\]
+
+\paragraph{Evaluation Strategies:} A Priori, A Posteriori, \& Predicted Evaluation\\
+To speed up the policy evaluation and increase the data frame throughput, PEP and PDP instances may rely upon different policy evaluation strategies.
+The SABAAC approach distinguishes between three evaluation strategies shown in \autoref{fig:policy_evaluation_strategies} and defined below:
+\begin{itemize}
+    \item \textbf{A Priori:} The a priori or precomputed evaluation aims to maximize the policy evaluation speed.
+    A finite-state machine representing the a priori evaluation strategy at a PDP and PEP is shown in \autoref{fig:apriori_policy_evaluation_strategy}.
+    At the PDP, the strategy is applied via precomputation of the dynamic authorization function $E_{POL}$ for all available access control policies of the SAS.
+    Accordingly, a PDP refreshes and caches each access decision periodically, and provides it to PEPs if requested.
+    At the PEP, a priori evaluation can be achieved by requesting access decisions before data frames are matched and forwarded, i.e., before $E_{DEC}$ is evaluated.
+    For this purpose, a PEP requests all relevant access decisions at startup and re-request them from a PDP before the period of validity ends.
+    The precomputation strategy results in an increased policy evaluation speed, increased data frame throughput, and decreased network jitter sensitivity.
+    The a priori strategy is particularly suitable for periodic message exchanges, such as messages exchanges of the SV protocol.
+    However, precomputation and caching of access decisions leads to increased memory utilization.
+    Furthermore, periodic refreshing of unused or rarely used access decisions results in non-optimal power efficiency.
+    
+    \item \textbf{A Posteriori:} The a posteriori or ad-hoc evaluation aims to minimize the memory utilization.
+    A finite-state machine representing the a posteriori evaluation strategy at a PDP and PEP is shown in \autoref{fig:aposteriori_policy_evaluation_strategy}.
+    In contrast to the a priori strategy, neither the PDP-driven dynamic authorization nor the PEP-driven access decision requests are precomputed or cached.
+    As a consequence, for each traversing data frame a PEP requests an access decision from a PDP.
+    The PDP evaluates $E_{POL}$ on request and provides the result to the PEP.
+    As no access decisions are cached at the PDP and PEP, the a posteriori strategy minimizes the memory utilization.
+    The strategy is particularly suitable for non-recurring and non-periodic message exchanges without message fragmentation.
+    However, for periodic message exchanges and frequently matching flow patterns the strategy results in non-optimal power efficiency and decreased data frame throughput, as access policies are repeatedly evaluated even if the corresponding access decisions are still valid.
+
+    \item \textbf{Predicted:} The predicted, conditional, or hybrid evaluation aims to optimize data frame throughput, memory utilization, and power efficiency.
+    A finite-state machine representing the predicted evaluation strategy at a PDP and PEP is shown in \autoref{fig:predicted_policy_evaluation_strategy}.
+    This strategy is inspired by the branch prediction used in microprocessor architectures.
+    Instead of relying exclusively upon a priori or a posteriori evaluation, the hybrid evaluation uses a predictor to decide whether an access decision should be refreshed and cached.
+    By predicting whether an access decision is required in the next prediction period, PDPs and PEPs are able to avoid unnecessary computation, requesting, and caching of non-required access decisions.
+    As for branch predictors in microprocessor architectures, the primary objective of an access decision predictor is the avoidance of cache misses, while optimizing the memory utilization and power efficiency. 
+\end{itemize}
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.40\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/apriori_evaluation_strategy.drawio.pdf}
+        \caption{A priori policy evaluation.}
+        \label{fig:apriori_policy_evaluation_strategy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.55\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/aposteriori_evaluation_strategy.drawio.pdf}
+        \caption{A posteriori policy evaluation.}
+        \label{fig:aposteriori_policy_evaluation_strategy}
+        \vspace{1.0\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}[t]{1.\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/predicted_evaluation_strategy.drawio.pdf}
+        \caption{Predicted policy evaluation.}
+        \label{fig:predicted_policy_evaluation_strategy}
+    \end{subfigure}
+    \caption{Finite-state machines of the SABAAC policy evaluation strategies at the PDP and PEP.}
+    \label{fig:policy_evaluation_strategies}
+\end{figure}
+
+\subsection{Delegated Attribute-Based Authorization Protocol}
+\label{sec:approach:sabaac:authorization}
+In the following, we discuss the delegated attribute-based authorization protocol of the SABAAC approach.
+Authorization is the process of assigning access privileges for protected objects to subjects \cite{Eckert2023}.
+A subject is said to be authorized for a specific request if it has the required access privileges for the request.
+We propose an authorization protocol that is responsible for the policy creation, modification, storage, and distribution.
+For this purpose, the authorization protocol provides policy management services at the PAP.
+Moreover, the authorization protocol provides services for the exchange of policies between the PAP, PSP, and PDP.
+The authorization protocol is part of the control path of CASC-SAS, as neither policy management nor policy exchange are directly related to domain-specific messages.
+
+The delegated attribute-based authorization protocol offers reliable services to entities involved in the policy management process, including human operators or intrusion detection and prevention systems. 
+It uses signing and verification services provided by CASA to safeguard the integrity and authenticity of messages.
+The exchanged messages of the protocol are sequenced, as defined by security policy IV in \autoref{sec:approach:security_policies}, to protect the protocol against intentional or accidental re-ordering, replaying, and delaying of messages.
+To guarantee the delivery of messages, the protocol relies on an Automatic Repeat Query (ARQ) approach.
+Accordingly, positive acknowledgements and timeout-based retransmissions are used to achieve reliable message transmission over an unreliable communication channel.
+
+As discussed in \autoref{sec:approach:sabaac:policy}, access control policies are classified as either static or dynamic.
+Consequently, the authorization protocol has to take the time-variability of access control policies into account.
+For this purpose, the authorization protocol consists of three parts or sub-protocols:
+\begin{description}
+    \item[Static Authorization] The static authorization process is responsible for handling CRUD requests for access control policies.
+    The process, the involved components, and the occurring message exchanges are visualized in \autoref{fig:sabaac_authorization_static}.
+    The static authorization is initiated by a human operator or an external system responsible for the management of policies.
+    When a policy CRUD request arrives at a PAP, it is processed by the PAP according to the requested action.
+    In case of a read request, the PAP fetches the requested access control policy from its PSP and returns it to the requestor.
+    Create, update, and delete requests are processed by computing a set of changes to be made to the persistent set of access control policies.
+    These changes are sent to the PSP via persistence requests.
+    As soon as all changes are made to the access control policies, the PSP sends a persistence acknowledgement to the PAP and the PAP acknowledges the initial policy CRUD request.
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.75\linewidth]{figures/SABAAC_protocols_authorization_static.drawio.pdf}
+        \caption{Exchanged messages of the static authorization process.
+        % The process is initiated by a policy modification request of a human operator at a HMI. The involved PAP instance relies on a PSP to persist static authorizations or SABAAC policies. Requests to persist changes to static authorizations are communicated in the form of CRUD requests between the PAP and PSP.
+        }
+        \label{fig:sabaac_authorization_static}
+    \end{figure}
+    \item[Policy Exchange] After a policy is created, modified, or deleted during static authorization, it is shared with the PDPs via policy exchange.
+    The policy exchange is an interaction between a PAP and a PDP.
+    The interaction is either initiated by a PAP as a result of a static authorization, or on request of a PDP.
+
+    If a static authorization triggers the policy exchange, the PAP sends a policy exchange message to a PDP.
+    This type of policy exchange is referred to as incremental policy exchange., i.e., only newly created, modified, or removed policies are exchanged.
+    The incremental policy exchange is shown in \autoref{fig:sabaac_authorization_dynamic_policyexchange_incremental}.
+
+    A policy exchange containing all relevant policies can be initiated by a PDP by sending a policy exchange request to a PAP.
+    This type of policy exchange is referred to as complete policy exchange.
+    The complete policy exchange is shown in \autoref{fig:sabaac_authorization_dynamic_policyexchange_complete}.
+    \begin{figure}
+        \centering
+        \begin{subfigure}[t]{0.48\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{figures/SABAAC_protocols_authorization_dynamic_policyexchange_incremental.drawio.pdf}
+            \caption{Incremental policy exchange procedure initiated by the static authorization of a PAP.}
+            \label{fig:sabaac_authorization_dynamic_policyexchange_incremental}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{figures/SABAAC_protocols_authorization_dynamic_policyexchange_complete.drawio.pdf}
+            \caption{Complete policy exchange procedure initiated by a policy exchange request of a PDP.}
+            \label{fig:sabaac_authorization_dynamic_policyexchange_complete}
+        \end{subfigure}
+        \caption{Exchanged messages of the policy exchange procedures.
+        %The static authorization is a prerequisite for both policy exchange procedures. The policy exchange is an interaction between a PAP and a PDP either initiated by a static authorization or on request of the involved PDP. The policy exchange is a prerequisite for dynamic authorization at a PDP. A repeatedly executed dynamic authorization process may be initially triggered by a policy exchange.
+        }
+        \label{fig:sabaac_authorization_dynamic_policyexchange}
+    \end{figure}
+    \item[Dynamic Authorization] The dynamic authorization process is responsible for deriving an access decision from an access control policy at the PDP.
+    The process, the involved components, and the occurring message exchanges are visualized in \autoref{fig:sabaac_authorization_dynamic}.
+    \Cref{alg:dynamic_authorization} shows the steps of the dynamic authorization process executed by a PDP, i.e., the process of deriving an access control decision in a given system for each access control policy available to the PDP.
+    Depending on the evaluation strategy used, the dynamic authorization might either be triggered automatically prior to an access request of a PEP, or be triggered by an access request.
+    As discussed in \autoref{sec:approach:sabaac:policy}, the dynamic authorization process is based on the dynamic authorization function $E_{POL}: Policy \times System \rightarrow Decision$.
+    Prior to the evaluation of the dynamic authorization function for a policy, the PDP fetches the auxiliary attributes from other system entities via attribute request messages.
+    These entities respond to the attribute requests with attribute resolution messages.
+    As soon as the auxiliary attributes of a policy are available at the PDP, the dynamic authorization function $E_{POL}$ is evaluated.
+    \begin{algorithm}
+        \caption{Dynamic authorization process of a PDP deriving an access control decision for each access control policy in a given system.}
+        \label{alg:dynamic_authorization}
+        \begin{algorithmic}
+        \Function{DynamicAuthorization}{$Policies$, $System$}
+            \Let{$Decisions$}{$\left\{\,\right\}$} \Comment{Initialize an empty set of access decisions}
+            \Let{$ATT_{System}$}{$\left\{\,\right\}$} \Comment{Initialize an empty system state}
+            \\
+            \ForIn{$\rho = (action_{\rho}, flow_{\rho}, auxiliary_{\rho})$}{$Policies$}
+                \Let{$ATT_{auxiliary_{\rho}}$}{$\left\{\,\right\}$} \Comment{Initialize the auxiliary attributes of policy $\rho$}
+                \ForIn{$a_i$}{$auxiliary_{\rho}$}
+                    \LineComment{Request the attribute values for $a_i \in auxiliary_{\rho}$ from the system}
+                    \Let{$ATT_{a_i}$}{\Call{ResolveAttributes}{$a_i, System$}}
+                    \Let{$ATT_{auxiliary_{\rho}}$}{$ATT_{auxiliary_{\rho}} \cup ATT_{a_i}$}
+                \EndFor
+                \\
+                \LineComment{Add the auxiliary attributes of policy $\rho$ to the current system state $ATT_{System}$}
+                \Let{$ATT_{System}$}{$ATT_{System} \cup ATT_{auxiliary_{\rho}}$}
+                \\
+                \LineComment{Derive an access decision from policy $\rho$ \& the current system state $ATT_{System}$}
+                \Let{$Decisions$}{$Decisions \cup E_{POL}(\rho, ATT_{System})$}
+            \EndFor
+            \State \Return $Decisions$
+        \EndFunction
+        \end{algorithmic}
+    \end{algorithm}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.9\linewidth]{figures/SABAAC_protocols_authorization_dynamic.drawio.pdf}
+        \caption{Exchanged messages of the dynamic authorization process.
+        }
+        \label{fig:sabaac_authorization_dynamic}
+    \end{figure}
+\end{description}
+
+\subsection{Delegated Attribute-Based Access Control Protocol}
+\label{sec:approach:sabaac:accesscontrol}
+In the following section, we discuss the delegated attribute-based access control protocol of the SABAAC approach.
+The goal of the access control protocol is the request, exchange, and enforcement of access control decisions.
+The devices of a SAS, including IEDs and MUs, neither request nor enforce the access control decisions but delegate these tasks to trusted PEP instances.
+The access control decisions result from the dynamic authorization process discussed in \autoref{sec:approach:sabaac:authorization}.
+Since the PDP instances execute the dynamic authorization, the provisioning of access control decisions is delegated to the PDP instances as well.
+
+The delegated attribute-based access control protocol comprises reliable and unreliable services.
+These services are provided by PDPs and used by PEPs.
+Since the services provided by the protocol are directly related to domain-specific messages, the protocol is part of the CASC-SAS data path.
+Accordingly, the occurring message exchanges are time-critical and traffic-intensive.
+As with the delegated attribute-based authorization protocol, the access control protocol uses signing and verification services provided by CASA to safeguard the integrity and authenticity of messages.
+Furthermore, messages of the protocol are sequenced, as defined by security policy IV in \autoref{sec:approach:security_policies}, to protect the protocol against intentional or accidental re-ordering, replaying, and delaying of messages.
+The parts of the protocol that guarantee the delivery of messages, use an ARQ approach with positive acknowledgements and timeout-based retransmissions to achieve reliable message exchange.
+As the message exchanges of the protocol are time-critical, negative acknowledgements are used in addition to timeout-based retransmissions to indicate errors and trigger retransmissions.
+
+% The access control protocol of the SABAAC approach uses digitally signed and partially acknowledged message exchange.
+% As with the authorization protocol, it uses digital signatures and verification provided by CASA to verify the integrity and authenticity of messages.
+% To exchange messages on the control path, the access control protocol relies on reliable transport services provided by the message exchange layer.
+% Data path message exchange of the access control protocol relies on either reliable or unreliable transport services depending on requirements such as message integrity and congestion tolerance.
+% Moreover, the protocol is based on discontinuous message-based communication as well as continuous session-based communication at the cybersecurity layer.
+% The access control sessions are initialized at the sending and receiving entities prior to the exchange of domain-specific messages.
+
+% The security of the access control protocol is vulnerable to three distinct threats.
+% Due to its communication architecture the protocol is vulnerable to replay, Denial-of-Service (DoS), and collusion attacks.
+% Replay of messages represents a threat for session-based and message-based communication.
+% Session-based communication of the protocol uses session identifiers and sequence numbers to provide replay protection.
+% Message-based communication employs timestamp-based replay protection, similar to the discontinuous communication used by the authorization protocol.
+% DoS attacks represent a threat for session-based communication due its stateful concept including session initialization and management.
+% To mitigate malicious DoS attacks and DoS due to configuration and system errors, the access control uses a soft-state session-based message exchange.
+% Accordingly, the session states used by the communicating entities have to be refreshed periodically and unused or invalid states are deleted.
+% As a consequence, devices may not make assumptions about the current state of other devices.
+% Moreover, a device has to handle session state exceptions via reinitialization of access control sessions.
+% The third type of security threat is the collusion of malicious PDP and PEP instances.
+% A collusion attack occurs if a PDP forges an access decision that is used by a PEP to access a protected object in an unauthorized manner.
+% To mitigate collusion and reduce the trust in a PDP, a PEP can use server-aided access decision verification.
+% Therefor, a PEP can request the verification of a PDP access decision from another PDP.
+
+The workflow of the access control protocol is divided into three mandatory phases and an optional verification phase.
+The phases of the access control protocol are defined as follows:
+\begin{description}
+    \item[Access Request] The access request represents the initial phase of the access control procedure.
+    The goal of this phase is the exchange of an access decision between a PDP and PEP.
+    The access request phase is initiated by a PEP on behalf of a domain subject.
+    Depending on the evaluation strategy used, the PEP either sends an access request to a PDP before or after a domain-specific request arrives at the PEP.
+    On receipt of an access request, the PDP verifies the request, fetches the requested access decision from its cache or derives it via dynamic authorization, and returns the access decision to the requesting PEP.
+
+    To identify the requested access decision and the corresponding access control policy at the PDP, the PEP appends a set of flow attributes $ATT_{f} \subseteq f$ of a data frame flow $f$ to the access request.
+    The PDP uses these flow attributes to evaluate the flow patterns of the available access control policies.
+    Consequently, the flow attributes are used by the PDP to identify all applicable policies.
+    The PDP returns the access decision of the applicable access control policy with the most specific flow pattern match.
+    As discussed in \autoref{sec:approach:sabaac:policy}, if multiple conflicting access control policies are applicable, the composite decision of the corresponding access decisions can be used to resolve the conflict.
+    If no access control policy is applicable, the PDP returns a default access decision $d_{Default}$ that matches the flow attributes $ATT_{f}$ exactly.
+    Since the default action of SABAAC is $DENY$, the default access decision is $d_{SABAAC} = \{flow_{ATT_{f}}, DENY, \emptyset, validity_{Default}\}$.
+
+    \item[Session Initialization] The session initialization is executed by a PEP that is granted access during the access request phase.
+    To initialize an access control session, a PEP sends a session initialization request to another PEP.
+    The request has to contain a PDP-signed granted access decision.
+    The PEP may send the initialization request along with domain-specific data by piggybacking a payload exchange request.
+    A more detailed examination of the piggybacking approach is provided below.
+    On receipt of an initialization request, a PEP may optionally use server-aided access decision verification that is further discussed in the following section.
+    If a received initialization request is valid, the PEP initializes a session state by adding the encapsulated access decision to an internal set of access decisions for incoming messages.
+    Furthermore, the PEP sends a positive initialization acknowledgement and starts processing piggybacked domain-specific requests.
+    If the request is invalid, the PEP sends a negative initialization acknowledgement and discards the piggybacked domain-specific request.
+
+    A successful session initialization between two PEPs is shown in \autoref{fig:sabaac_accesscontrol_initialization}.
+    Besides the session initialization procedure, the figure shows a preceding access request and a server-aided access decision verification at the receiving PEP.
+    Additionally, the shown SABAAC components rely on computation requests for server-aided cryptography provided by the APEX protocol of CASA.
+    \begin{figure}
+        \centering
+        \includegraphics[width=1.0\linewidth]{figures/SABAAC_protocols_accesscontrol_initialization.drawio.pdf}
+        \caption{Exchanged messages of an access request with unidirectional session initialization and access decision verification.
+        % The access request procedure relies on an interaction between a PDP and a PEP and is a prerequisite for the session initialization. The session initialization relies on an interaction between two PEP instances. The receiver's PEP uses a server-aided access decision verification provided by a PDP to reduce the trust in another PDP. The shown SABAAC components, especially resource-constrained PEP instances, rely on the services provided by a CASA CAPP for SAV.
+        }
+        \label{fig:sabaac_accesscontrol_initialization}
+    \end{figure}
+    \item[Access Decision Verification] The optional server-aided access decision verification enables a PEP to verify received access decisions.
+    This optional step is used to reduce the trust in a single PDP instance.
+    To initiate the verification process, a PEP appends a PDP-signed access decision to an access decision verification request, and sends the request to another PDP.
+    The PDP verifies the access decision and sends a positive or negative access decision verification response back to the PEP.
+    \item[Payload Exchange] The payload exchange phase is the final phase of the access control protocol.
+    The goal of the payload exchange phase is to securely exchange domain-specific requests or data between a sending and a receiving domain entity, i.e., between two SAS devices, such as IEDs or MUs.
+    As the payload exchange is time-critical and traffic-intensive, delivery of messages cannot be guaranteed via positive acknowledgements and timeout-based retransmissions.
+    Consequently, the service provided by the payload exchange phase is unreliable with regard to dropping of messages.
+    However, the payload exchange phase relies on a Negative Acknowledgement (NACK) concept.
+    A NACK is sent in case of an exception, thus acknowledgement implosions in multicast and broadcast communication scenarios are avoided.
+    A received NACK may trigger a session re-initialization workflow at a PEP.
+
+    The payload exchange is initiated by a domain entity via delivery of a domain-specific data frame to its PEP.
+    On receipt of a domain-specific data frame $f$, the sender's PEP identifies all matching access control decisions $d_1, \dots, d_n$ by evaluating their flow patterns for data frame $f$.
+    As in the access request phase and as discussed in \autoref{sec:approach:sabaac:policy}, the PEP uses the access decision of the applicable access control policy with the most specific flow pattern match, or a composite decision in case of a conflict.
+    If no matching access decision is available, the PEP initiates an access request and session initialization procedure.
+    As soon as the access decision is available, the PEP executes the decision enforcement function $E_{DEC}: Decision \times Frame \rightarrow (Action, Nexthop)$.
+    If the access decision is granting, the PEP encapsulates the data frame in a payload exchange request, and forwards the request to each $PEP \in nexthop$.
+    On receipt of the payload exchange request, the receiving PEP fetches the most specific access decision and evaluates $E_{DEC}$.
+    If the access decision is granting and the receiving PEP is part of the $nexthop$ set, the encapsulated data frame is forwarded to the receiving domain entity.
+    Otherwise, the payload exchange request is discarded.
+    A successful unidirectional payload exchange between a sender and receiver is shown in \autoref{fig:sabaac_accesscontrol_payloadexchange}.
+    The shown procedure relies solely on the interaction of PEP instances, with the exception of a computation request for server-aided cryptography on message receipt.
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.9\linewidth]{figures/SABAAC_protocols_accesscontrol_payloadexchange.drawio.pdf}
+        \caption{Exchanged messages of a unidirectional payload exchange procedure.
+        % The procedure relies solely on the interaction of PEP instances, with the exception of a single server-aided CASA verification on message receipt.
+        }
+        \label{fig:sabaac_accesscontrol_payloadexchange}
+    \end{figure}
+    
+    \item[Piggybacked Payload Exchange] Domain-specific communication is unidirectionally handled by the access control protocol of SABAAC.
+    Consequently, a response to a domain-specific request is handled as independent message exchange by the PEPs.
+    To reduce the overhead of session initialization handshaking, the requesting PEP may send the session initialization request along with a domain-specific data frame by piggybacking a payload exchange request.
+    The processing of piggybacked payload exchange requests starts as soon as the corresponding initialization request is processed.
+    The usage of piggybacking decreases the required time until a domain-specific request arrives at a PEP.
+    Since session initialization requires at least one RTT for handshaking, a non-piggybacked domain-specific request is delayed by at least one RTT.
+    As session initialization is handled unidirectionally, the handshaking leads to a delay of at least two RTTs for bidirectional domain-specific communication.
+
+    A simplified session initialization procedure between two PEPs is shown in \autoref{fig:sabaac_accesscontrol_initialization_rtt}.
+    A session initialization procedure without piggybacking is shown in \autoref{fig:sabaac_accesscontrol_initialization_rtt_nopiggyback}, whereas \autoref{fig:sabaac_accesscontrol_initialization_rtt_piggyback} shows the same payload exchanges using piggybacked requests.
+    Three RTTs are the minimum time until a response to a domain-specific request can be received if no piggybacking is used.
+    This three RTT delay consists of one RTT for forward session initialization, a half RTT for the forward payload exchange request, one RTT for backward session initialization, and a half RTT for the backward payload exchange request.
+    The use of piggybacking reduces the minimum time required to deliver the first payload exchange request from one and a half RTTs to a half RTT under the assumption of symmetric transmission times.
+    The minimum time until a response is delivered for the initial payload exchange request is reduced from three RTTs to a single RTT.
+    After the bidirectional initialization of sessions, the minimum time required for a bidirectional payload exchange equals one RTT in both scenarios.
+    \begin{figure}
+        \centering
+        \begin{subfigure}[t]{0.48\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{figures/SABAAC_protocols_accesscontrol_initialization_rtt_nopiggyback.drawio.pdf}
+            \caption{Bidirectional session initialization and payload exchange without piggybacking.}
+            \label{fig:sabaac_accesscontrol_initialization_rtt_nopiggyback}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{figures/SABAAC_protocols_accesscontrol_initialization_rtt_piggyback.drawio.pdf}
+            \caption{Bidirectional session initialization and payload exchange with piggybacking.}
+            \label{fig:sabaac_accesscontrol_initialization_rtt_piggyback}
+        \end{subfigure}
+        \caption{Protocol sequence diagrams of bidirectional session initialization and message exchange.
+        % Protocol sequence diagrams showing a simplified piggybacking and non-piggybacking initialization of sessions for bidirectional message exchange and payload exchange between two PEP instances. For RTT comparison purposes, the semantically identical session initialization handshakes and message exchanges are shown without and with piggybacking of payload exchange requests. The use of piggybacking reduces the minimum time required to deliver the first payload exchange request from two RTTs to a half RTT under the assumption of symmetric transmission times. The minimum time until a response is delivered for the initial payload exchange request is reduced from three RTTs to a single RTT. After the bidirectional initialization of sessions, the minimum time required for a bidirectional payload exchange equals one RTT for both scenarios.
+        }
+        \label{fig:sabaac_accesscontrol_initialization_rtt}
+    \end{figure}
+\end{description}
+
+\section{Realization}
+\label{sec:approach:realization}
+In the following section, we discuss the realization of the CASC-SAS approach and its two core concepts CASA and SABAAC.
+The approach and its two core concepts introduce components that are defined and discussed in \autoref{sec:approach:casa} and \autoref{sec:approach:sabaac}.
+To employ the CASC-SAS approach in a SAS, these components have to be integrated into the system architecture of a newly constructed or retrofitted SAS.
+The three-layered architecture of a SAS, as introduced in the IEC 61850 standards \cite{IEC61850P8}, is shown in \autoref{fig:substation_architecture}.
+Our adaptation of the layered SAS architecture integrating the introduced components of the CASC-SAS approach is shown in \autoref{fig:casc_architecture}.
+Any non-intermediate SAS devices that participate in a communication relationship must either support the CASC-SAS protocols or use the services provided by a PEP to secure occurring message exchanges according to the CASC-SAS security policies introduced in \autoref{sec:approach:security_policies}.
+The components depicted in blue represent devices of a typical SAS, whereas the components depicted in red are introduced by the CASC-SAS approach.
+The components with a color gradient represent SAS devices that have been adapted to support CASC-SAS concepts.
+
+The employed components of CASA and SABAAC provide different types of services, and have to be deployed differently to correspond to the presented protocols.
+Since the delegated attribute-based authorization protocol is part of the time-critical and traffic-intensive data path of CASC-SAS, the PEPs and PDPs have to be present locally in every adapted SAS.
+Furthermore, at least one CAPP instance has to be present locally in a SAS to support query and computation transactions in a timely manner, i.e., to take the strict time constraints of SAS-internal low latency message exchanges into account.
+The PAP and PSP may be centrally deployed, as the delegated attribute-based authorization protocol of SABAAC is part of the non-time-critical control path communication.
+Consequently, while some components may be deployed centrally, other components have to be distributed to individual substations.
+This leads to differing hardware requirements for the deployed components.
+With the exception of PEP instances, the components provide their services by using a client-server pattern.
+The PEP instances partially use a client-server pattern and partially provide their services in the form of a Bump-In-The-Wire (BITW) solution.
+The services of the delegated attribute-based access control protocol at the PEPs are provided via BITW pattern.
+Therefore, these services are invisible to the corresponding service consumers, i.e., to the SAS devices secured by the PEPs.
+The BITW pattern is inspired by the security filter approach presented by \citeauthor{Ishchenko2018} \cite{Ishchenko2018}.
+Taking the differing provision patterns and deployment structures into account, we propose the usage of performance-oriented server hardware for the PAP, PSP, PDP, and CAPP to avoid bottlenecks and mitigate the risk of accidental or malicious DoS.
+For the highly distributed PEP instances, we propose the usage of inexpensive off-the-shelf hardware.
+To reduce the trust in single component instances and achieve a fault-tolerant and scalable system, components can be deployed redundantly, as discussed for access decision verification in \autoref{sec:approach:sabaac:accesscontrol}.
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/casc_architecture_color.drawio.pdf}
+    \caption{Adaptation of the layered SAS architecture to the CASC-SAS approach.
+    % The adaptation of the layered SAS architecture to the CASC-SAS approach entails a modification of the architecture to accommodate the additional components provided by CASC-SAS. The components depicted in blue represent elements of the SAS architecture, whereas the components depicted in red are introduced by the CASC-SAS approach. The components with a color gradient represent elements of the SAS architecture that have been adapted to support CASC-SAS concepts.
+    }
+    \label{fig:casc_architecture}
+\end{figure}

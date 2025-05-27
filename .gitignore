@@ -1,0 +1,9 @@
+# JabRef
+*.bak
+*.sav
+
+# PowerPoint
+~$*.pptx
+
+# Python
+__pycache__
